@@ -168,11 +168,16 @@ function generateUniqueName() {
         // 5. Append SHAPE and LABEL to the CONTAINER
         speciesContainer.appendChild(shapeEl);
         speciesContainer.appendChild(labelEl);
+        console.log(`Rendering species ${speciesData.id}: Center (x:${speciesData.x}, y:${speciesData.y}), Size: ${speciesData.size}`);
+    if (typeof speciesData.x !== 'number' || isNaN(speciesData.x) || typeof speciesData.y !== 'number' || isNaN(speciesData.y) || typeof speciesData.size !== 'number' || isNaN(speciesData.size) || speciesData.size <= 0) {
+        console.error("!!! Invalid position/size data in renderSpecies:", speciesData);
+    }
 
         // 6. Calculate position for the CONTAINER
         // Position the top-left corner of the container based on the species' center coordinates
         const pixelX = speciesData.x - (speciesData.size / 2); // Horizontal center based on shape size
         const pixelY = speciesData.y - (speciesData.size / 2); // Vertical position based on shape center
+        console.log(` -> Calculated Container Pos (left:${pixelX}, top:${pixelY})`); // Log calculated top-left
 
         // 7. Apply absolute positioning to the CONTAINER
         speciesContainer.style.left = `${pixelX}px`;
@@ -186,6 +191,10 @@ function generateUniqueName() {
     }
 
     function renderConnector(parentData, childData) {
+         console.log(`Rendering connector from Parent ${parentData.id} (x:${parentData.x}, y:${parentData.y}) to Child ${childData.id} (x:${childData.x}, y:${childData.y})`);
+        if (typeof parentData.x !== 'number' || isNaN(parentData.x) || /*... check all 4 coords ...*/) {
+         console.error("!!! Invalid position data in renderConnector:", {parentData, childData});
+    }
         // *** Calculations use direct pixel coordinates from data ***
         const parentCenterX = parentData.x;
         const parentCenterY = parentData.y;
