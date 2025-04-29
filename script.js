@@ -22,75 +22,167 @@ document.addEventListener('DOMContentLoaded', () => {
         spreadIncreaseFactor: 1.2   // Multiply spread by this factor for each subsequent generation (adjust > 1.0)
                                     // Values between 1.1 and 1.4 often work well.
     };
+    const VOWELS = ['a', 'e', 'i', 'o', 'u'];
+    const CONSONANTS = [
+        'b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm',
+        'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y', 'z'
+    ];
+    const CONSONANT_CLUSTERS = [
+        'bl', 'br', 'ch', 'cl', 'cr', 'dr', 'fl', 'fr', 'gl', 'gr', 'ph',
+        'pl', 'pr', 'qu', 'sc', 'sh', 'sk', 'sl', 'sm', 'sn', 'sp', 'st',
+        'sw', 'th', 'tr', 'tw', 'wh', 'wr', 'sch', 'scr', 'shr', 'sph', 'spl',
+        'spr', 'str', 'thr'
+    ];
+    const NAME_CONFIG = {
+        minSyllables: 2,
+        maxSyllables: 5, // Reduced max slightly for more manageable names
+        clusterChance: 0.3 // 30% chance to use a cluster instead of single consonant
+    };
+
 
     // --- State Variables ---
     let allSpecies = [];
     let isPanning = false;
     let startX, startY, scrollLeftStart, scrollTopStart;
+    // --- Add this Set to the State Variables ---
+    let generatedNames = new Set(); // To track unique names
 
     // --- Initialization Function ---
-    function initializeSimulation() {
-        container.innerHTML = '';
-        speciesCounter = 0;
+function initializeSimulation() {
+    container.innerHTML = '';
+    speciesCounter = 0;
+    generatedNames.clear(); // *** Reset the name set ***
 
-        // *** Calculate initial X position based on current visible container width ***
-        // We need the container to have rendered to get its width
-        const containerRect = container.getBoundingClientRect();
-        const initialX = containerRect.width / 2; // Start at horizontal center of visible area
+    const containerRect = container.getBoundingClientRect();
+    const initialX = containerRect.width / 2;
 
-        const firstSpecies = {
-            // No template needed, just define it
-            id: speciesCounter++,
-            parentId: null,
-            generation: 0,
-            // *** Store position in PIXELS ***
-            x: initialX, // Initial X position in pixels
-            y: INITIAL_SPECIES_Y_POS, // Initial Y position in pixels
-            size: 30,
-            color: { h: 0, s: 100, l: 50 },
-            shape: 'square',
-            canSpeciate: true
-        };
+    const firstSpecies = {
+        id: speciesCounter++,
+        parentId: null,
+        generation: 0,
+        x: initialX,
+        y: INITIAL_SPECIES_Y_POS,
+        size: 30,
+        color: { h: 0, s: 100, l: 50 },
+        shape: 'square',
+        canSpeciate: true,
+        name: generateUniqueName() // *** Generate name for initial species ***
+    };
 
-        allSpecies = [firstSpecies];
+    allSpecies = [firstSpecies];
 
-        // Reset scroll to show the initial area
-        container.scrollLeft = initialX - containerRect.width / 2; // Center horizontally
-        container.scrollTop = 0; // Scroll to top
-
-        renderSpecies(firstSpecies);
-        console.log("Simulation Reset and Initialized");
+    renderSpecies(firstSpecies);
+    console.log("Simulation Reset and Initialized with name:", firstSpecies.name);
     }
 
     // --- Core Functions ---
 
-    function renderSpecies(speciesData) {
-        const el = document.createElement('div');
-        el.classList.add('species');
-        el.classList.add(`shape-${speciesData.shape}`);
-        el.dataset.id = speciesData.id;
 
-        // *** POSITIONING USING DIRECT PIXEL VALUES ***
-        // Calculate top-left corner for CSS from center coordinates and size
-        const pixelX = speciesData.x - (speciesData.size / 2);
-        const pixelY = speciesData.y - (speciesData.size / 2);
 
-        el.style.left = `${pixelX}px`;
-        el.style.top = `${pixelY}px`;
-        // --- End of change ---
+// --- Helper Function ---
+function getRandomElement(arr) {
+    if (!arr || arr.length === 0) return ''; // Safety check
+    return arr[Math.floor(Math.random() * arr.length)];
+}
 
-        el.style.width = `${speciesData.size}px`;
-        el.style.height = `${speciesData.size}px`;
-        el.style.backgroundColor = `hsl(${speciesData.color.h}, ${speciesData.color.s}%, ${speciesData.color.l}%)`;
+// --- Name Generator Function ---
+function generateUniqueName() {
+    let name = '';
+    let attempts = 0;
+    const maxAttempts = 100; // Prevent infinite loop if somehow space runs out
 
-        if (speciesData.canSpeciate) {
-            el.addEventListener('click', handleSpeciationClick);
-        } else {
-            el.classList.add('speciated');
+    do {
+        name = ''; // Reset name for each attempt
+        const syllableCount = Math.floor(Math.random() * (NAME_CONFIG.maxSyllables - NAME_CONFIG.minSyllables + 1)) + NAME_CONFIG.minSyllables;
+
+        for (let i = 0; i < syllableCount; i++) {
+            // Choose consonant or cluster
+            let cPart = '';
+            if (Math.random() < NAME_CONFIG.clusterChance && CONSONANT_CLUSTERS.length > 0) {
+                cPart = getRandomElement(CONSONANT_CLUSTERS);
+            } else {
+                cPart = getRandomElement(CONSONANTS);
+            }
+
+            // Choose vowel
+            const vPart = getRandomElement(VOWELS);
+
+            name += cPart + vPart;
         }
 
-        container.appendChild(el);
-        return el;
+        // Add suffix
+        name += 'idae'; // Sticking to '-idae' for simplicity and common usage
+
+        // Capitalize first letter
+        if (name.length > 0) {
+             name = name.charAt(0).toUpperCase() + name.slice(1);
+        }
+
+
+        attempts++;
+        if (attempts > maxAttempts) {
+            console.error("Failed to generate a unique name after", maxAttempts, "attempts. Giving up.");
+            // Return a placeholder or potentially allow non-unique after many tries
+            return name + Date.now(); // Make it unique with timestamp as fallback
+        }
+
+    } while (generatedNames.has(name)); // Keep trying if name exists
+
+    generatedNames.add(name); // Add the unique name to the set
+    return name;
+}
+
+        function renderSpecies(speciesData) {
+        // 1. Create the MAIN container for this species (shape + label)
+        const speciesContainer = document.createElement('div');
+        speciesContainer.classList.add('species-container'); // Use the new container class
+        speciesContainer.dataset.id = speciesData.id; // Store ID on the container
+
+        // 2. Create the visual SHAPE element INSIDE the container
+        const shapeEl = document.createElement('div');
+        shapeEl.classList.add('species-shape'); // New class for the shape itself
+        shapeEl.classList.add(`shape-${speciesData.shape}`); // Add specific shape class (like shape-square)
+
+        // Style the SHAPE element
+        shapeEl.style.width = `${speciesData.size}px`;
+        shapeEl.style.height = `${speciesData.size}px`;
+        shapeEl.style.backgroundColor = `hsl(${speciesData.color.h}, ${speciesData.color.s}%, ${speciesData.color.l}%)`;
+
+        // 3. Create the LABEL element INSIDE the container
+        const labelEl = document.createElement('div');
+        labelEl.classList.add('species-label');
+        labelEl.textContent = speciesData.name;
+
+        // 4. Add click listener and speciated styles to the SHAPE element
+        if (speciesData.canSpeciate) {
+            shapeEl.addEventListener('click', handleSpeciationClick);
+            shapeEl.style.cursor = 'pointer'; // Indicate clickable shape
+        } else {
+            // Add class to the main container for potential container-level styling
+            speciesContainer.classList.add('speciated');
+            // Apply visual cues directly to the shape element
+            shapeEl.style.cursor = 'default';
+            shapeEl.style.borderColor = '#aaa'; // Example: fade border
+        }
+
+        // 5. Append SHAPE and LABEL to the CONTAINER
+        speciesContainer.appendChild(shapeEl);
+        speciesContainer.appendChild(labelEl);
+
+        // 6. Calculate position for the CONTAINER
+        // Position the top-left corner of the container based on the species' center coordinates
+        const pixelX = speciesData.x - (speciesData.size / 2); // Horizontal center based on shape size
+        const pixelY = speciesData.y - (speciesData.size / 2); // Vertical position based on shape center
+
+        // 7. Apply absolute positioning to the CONTAINER
+        speciesContainer.style.left = `${pixelX}px`;
+        speciesContainer.style.top = `${pixelY}px`;
+
+        // 8. Append the whole CONTAINER to the main simulation area
+        container.appendChild(speciesContainer);
+
+        // 9. Return the main container element
+        return speciesContainer;
     }
 
     function renderConnector(parentData, childData) {
@@ -129,32 +221,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function handleSpeciationClick(event) {
-        const parentElement = event.target;
-        const parentId = parseInt(parentElement.dataset.id);
-        const parentData = allSpecies.find(s => s.id === parentId);
+    // Target is the shape element (<div class="species-shape">)
+    const shapeElement = event.target;
+    // Get the container element (<div class="species-container">)
+    const parentContainer = shapeElement.closest('.species-container'); // Find nearest ancestor with this class
 
-        if (!parentData || !parentData.canSpeciate) return;
-
-        parentData.canSpeciate = false;
-        parentElement.removeEventListener('click', handleSpeciationClick);
-        parentElement.classList.add('speciated');
-
-        createAndRenderChild(parentData, -1);
-        createAndRenderChild(parentData, 1);
-        // No need for checkContainerScroll anymore
+    if (!parentContainer) {
+        console.error("Could not find parent container for clicked shape.");
+        return;
     }
+
+    const parentId = parseInt(parentContainer.dataset.id); // Get ID from container
+    const parentData = allSpecies.find(s => s.id === parentId);
+
+    if (!parentData || !parentData.canSpeciate) return;
+
+    parentData.canSpeciate = false;
+    // Remove listener from the SHAPE element
+    shapeElement.removeEventListener('click', handleSpeciationClick);
+    shapeElement.style.cursor = 'default'; // Update shape cursor
+    shapeElement.style.borderColor = '#aaa'; // Update shape style
+    // Optional: Add speciated class to container too if needed for other styles
+    // parentContainer.classList.add('speciated');
+
+
+    createAndRenderChild(parentData, -1);
+    createAndRenderChild(parentData, 1);
+}
 
         function createAndRenderChild(parentData, horizontalFactor) {
             const childData = {
                 id: speciesCounter++,
                 parentId: parentData.id,
-                generation: parentData.generation + 1, // Child is one generation deeper
+                generation: parentData.generation + 1,
                 size: mutateSize(parentData.size),
                 color: mutateColor(parentData.color),
                 shape: mutateShape(parentData.shape),
                 canSpeciate: true,
-                x: 0, // Will be calculated
-                y: 0  // Will be calculated
+                name: generateUniqueName(), // *** Generate name for new child ***
+                x: 0,
+                y: 0
             };
 
         // --- Calculate Position (directly in pixels) ---
