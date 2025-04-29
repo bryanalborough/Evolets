@@ -11,8 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
         hueShift: 10,
         saturationShift: 5,
         lightnessShift: 5,
-        sizeChangeFactor: 0.2,
-        shapeMutationChance: 0.3
+        borderRadiusChange: 3,      // Max % change in border radius per step (+/-)
+        widthChangeFactor: 0.15,    // Max relative width change (e.g., 0.15 = +/- 15%)
+        heightChangeFactor: 0.15,   // Max relative height change
+        minDimension: 10,          // Min width/height in pixels
+        maxDimension: 100,         // Max width/height in pixels
     };
 
     const LAYOUT_CONFIG = {
@@ -63,9 +66,10 @@ function initializeSimulation() {
         generation: 0,
         x: initialX, // Initial X now includes padding
         y: INITIAL_SPECIES_Y_POS, // Y remains the same
-        size: 30,
+        width: 30,
+        height: 30,
+        borderRadiusPercent: 0, // Start as a square (0%)
         color: { h: 0, s: 100, l: 50 },
-        shape: 'square',
         canSpeciate: true,
         name: generateUniqueName()
     };
@@ -136,63 +140,55 @@ function generateUniqueName() {
     return name;
 }
 
-        function renderSpecies(speciesData) {
-        // 1. Create the MAIN container for this species (shape + label)
-        const speciesContainer = document.createElement('div');
-        speciesContainer.classList.add('species-container'); // Use the new container class
-        speciesContainer.dataset.id = speciesData.id; // Store ID on the container
+function renderSpecies(speciesData) {
+    const speciesContainer = document.createElement('div');
+    speciesContainer.classList.add('species-container');
+    speciesContainer.dataset.id = speciesData.id;
 
-        // 2. Create the visual SHAPE element INSIDE the container
-        const shapeEl = document.createElement('div');
-        shapeEl.classList.add('species-shape'); // New class for the shape itself
-        shapeEl.classList.add(`shape-${speciesData.shape}`); // Add specific shape class (like shape-square)
+    const shapeEl = document.createElement('div');
+    shapeEl.classList.add('species-shape');
+    // --- REMOVE shape class ---
+    // shapeEl.classList.add(`shape-${speciesData.shape}`);
 
-        // Style the SHAPE element
-        shapeEl.style.width = `${speciesData.size}px`;
-        shapeEl.style.height = `${speciesData.size}px`;
-        shapeEl.style.backgroundColor = `hsl(${speciesData.color.h}, ${speciesData.color.s}%, ${speciesData.color.l}%)`;
+    // --- Use NEW properties for styling ---
+    shapeEl.style.width = `${speciesData.width}px`;
+    shapeEl.style.height = `${speciesData.height}px`;
+    shapeEl.style.borderRadius = `${speciesData.borderRadiusPercent}%`; // Apply border radius %
+    // --- Keep color ---
+    shapeEl.style.backgroundColor = `hsl(${speciesData.color.h}, ${speciesData.color.s}%, ${speciesData.color.l}%)`;
 
-        // 3. Create the LABEL element INSIDE the container
-        const labelEl = document.createElement('div');
-        labelEl.classList.add('species-label');
-        labelEl.textContent = speciesData.name;
+    const labelEl = document.createElement('div');
+    labelEl.classList.add('species-label');
+    labelEl.textContent = speciesData.name;
 
-        // 4. Add click listener and speciated styles to the SHAPE element
-        if (speciesData.canSpeciate) {
-            shapeEl.addEventListener('click', handleSpeciationClick);
-            shapeEl.style.cursor = 'pointer'; // Indicate clickable shape
-        } else {
-            // Add class to the main container for potential container-level styling
-            speciesContainer.classList.add('speciated');
-            // Apply visual cues directly to the shape element
-            shapeEl.style.cursor = 'default';
-            shapeEl.style.borderColor = '#aaa'; // Example: fade border
-        }
-
-        // 5. Append SHAPE and LABEL to the CONTAINER
-        speciesContainer.appendChild(shapeEl);
-        speciesContainer.appendChild(labelEl);
-        console.log(`Rendering species ${speciesData.id}: Center (x:${speciesData.x}, y:${speciesData.y}), Size: ${speciesData.size}`);
-    if (typeof speciesData.x !== 'number' || isNaN(speciesData.x) || typeof speciesData.y !== 'number' || isNaN(speciesData.y) || typeof speciesData.size !== 'number' || isNaN(speciesData.size) || speciesData.size <= 0) {
-        console.error("!!! Invalid position/size data in renderSpecies:", speciesData);
+    if (speciesData.canSpeciate) {
+        shapeEl.addEventListener('click', handleSpeciationClick);
+        shapeEl.style.cursor = 'pointer';
+    } else {
+        speciesContainer.classList.add('speciated');
+        shapeEl.style.cursor = 'default';
+        shapeEl.style.borderColor = '#aaa';
     }
 
-        // 6. Calculate position for the CONTAINER
-        // Position the top-left corner of the container based on the species' center coordinates
-        const pixelX = speciesData.x - (speciesData.size / 2); // Horizontal center based on shape size
-        const pixelY = speciesData.y - (speciesData.size / 2); // Vertical position based on shape center
-        console.log(` -> Calculated Container Pos (left:${pixelX}, top:${pixelY})`); // Log calculated top-left
+    speciesContainer.appendChild(shapeEl);
+    speciesContainer.appendChild(labelEl);
 
-        // 7. Apply absolute positioning to the CONTAINER
-        speciesContainer.style.left = `${pixelX}px`;
-        speciesContainer.style.top = `${pixelY}px`;
+    // Log data for debugging positioning
+    console.log(`Rendering species ${speciesData.id}: Center (x:${speciesData.x}, y:${speciesData.y}), Width: ${speciesData.width}, Height: ${speciesData.height}, Radius: ${speciesData.borderRadiusPercent}%`);
+    // Add validity checks if needed...
 
-        // 8. Append the whole CONTAINER to the main simulation area
-        container.appendChild(speciesContainer);
+    // --- Calculate position using WIDTH and HEIGHT ---
+    const pixelX = speciesData.x - (speciesData.width / 2); // Use width for horizontal centering
+    const pixelY = speciesData.y - (speciesData.height / 2); // Use height for vertical centering
+    // --- End change ---
+    console.log(` -> Calculated Container Pos (left:${pixelX}, top:${pixelY})`);
 
-        // 9. Return the main container element
-        return speciesContainer;
-    }
+    speciesContainer.style.left = `${pixelX}px`;
+    speciesContainer.style.top = `${pixelY}px`;
+
+    container.appendChild(speciesContainer);
+    return speciesContainer;
+}
 
     function renderConnector(parentData, childData) {
 // *** ADD LOGGING HERE ***
@@ -272,51 +268,54 @@ function generateUniqueName() {
     createAndRenderChild(parentData, 1);
 }
 
-        function createAndRenderChild(parentData, horizontalFactor) {
-            const childData = {
-                id: speciesCounter++,
-                parentId: parentData.id,
-                generation: parentData.generation + 1,
-                size: mutateSize(parentData.size),
-                color: mutateColor(parentData.color),
-                shape: mutateShape(parentData.shape),
-                canSpeciate: true,
-                name: generateUniqueName(), // *** Generate name for new child ***
-                x: 0,
-                y: 0
-            };
-
-        // --- Calculate Position (directly in pixels) ---
-        const parentPixelCenterX = parentData.x;
-        const parentPixelCenterY = parentData.y;
-
-        // Child center Y in pixels
-        const childPixelCenterY = parentPixelCenterY + LAYOUT_CONFIG.verticalSpacing;
-
-        // *** MODIFIED SPREAD CALCULATION ***
-        // Calculate the spread for this specific child's generation
-        // Use parent's generation to determine the spread magnitude away FROM the parent
-        // A power of 0 is 1, so the first split uses baseHorizontalSpread.
-        const currentHorizontalSpread = LAYOUT_CONFIG.baseHorizontalSpread * Math.pow(LAYOUT_CONFIG.spreadIncreaseFactor, parentData.generation);
-
-        // Child center X offset using fixed pixel spread relative to parent's X
-        const horizontalOffsetPixels = currentHorizontalSpread * horizontalFactor;
-        const childPixelCenterX = parentPixelCenterX + horizontalOffsetPixels;
-
-        if (isNaN(childPixelCenterX) || isNaN(childPixelCenterY)) {
-        console.error("!!! Calculated child coordinates are NaN!", { childX: childPixelCenterX, childY: childPixelCenterY, parentX: parentPixelCenterX, parentY: parentPixelCenterY, offset: horizontalOffsetPixels, spread: currentHorizontalSpread });
-        return; // Stop processing this child if coords are bad
-        }
-
-        // *** Store child's absolute pixel coordinates ***
-        childData.x = childPixelCenterX;
-        childData.y = childPixelCenterY;
-        // --- End of change ---
-
-        allSpecies.push(childData);
-        renderSpecies(childData);
-        renderConnector(parentData, childData);
+function createAndRenderChild(parentData, horizontalFactor) {
+    // --- Check parent validity (optional but good) ---
+    if (typeof parentData.width !== 'number' || isNaN(parentData.width) || typeof parentData.height !== 'number' || isNaN(parentData.height) || typeof parentData.borderRadiusPercent !== 'number' || isNaN(parentData.borderRadiusPercent) || typeof parentData.x !== 'number' || isNaN(parentData.x) || typeof parentData.y !== 'number' || isNaN(parentData.y) || typeof parentData.generation !== 'number' || isNaN(parentData.generation) ) {
+        console.error(`CRITICAL ERROR: Parent ${parentData?.id} has invalid data for mutation/layout!`, parentData);
+        return; // Stop creating this child if parent is broken
     }
+
+    const childData = {
+        id: speciesCounter++,
+        parentId: parentData.id,
+        generation: parentData.generation + 1,
+        // --- Use NEW mutation functions ---
+        width: mutateDimension(parentData.width, MUTATION_CONFIG.widthChangeFactor),
+        height: mutateDimension(parentData.height, MUTATION_CONFIG.heightChangeFactor),
+        borderRadiusPercent: mutateBorderRadius(parentData.borderRadiusPercent),
+        // --- REMOVED ---
+        // size: mutateSize(parentData.size),
+        // shape: mutateShape(parentData.shape),
+        // --- Keep others ---
+        color: mutateColor(parentData.color),
+        canSpeciate: true,
+        name: generateUniqueName(),
+        x: NaN, // Initialize to NaN
+        y: NaN
+    };
+
+    // --- Calculate Position (directly in pixels) ---
+    const parentPixelCenterX = parentData.x;
+    const parentPixelCenterY = parentData.y;
+    const childPixelCenterY = parentPixelCenterY + LAYOUT_CONFIG.verticalSpacing;
+    const currentHorizontalSpread = LAYOUT_CONFIG.baseHorizontalSpread * Math.pow(LAYOUT_CONFIG.spreadIncreaseFactor, parentData.generation);
+    const horizontalOffsetPixels = currentHorizontalSpread * horizontalFactor;
+    const childPixelCenterX = parentPixelCenterX + horizontalOffsetPixels;
+
+    // Check for NaN right after calculation
+    if (isNaN(childPixelCenterX) || isNaN(childPixelCenterY)) { /* ... error handling ... */ return; }
+
+    // Store child's absolute pixel coordinates
+    childData.x = childPixelCenterX;
+    childData.y = childPixelCenterY;
+
+    // Log data (optional)
+    // console.log("  Final Child Data (before push):", JSON.parse(JSON.stringify(childData)));
+
+    allSpecies.push(childData);
+    renderSpecies(childData);
+    renderConnector(parentData, childData);
+}
     
     // --- Mutation Functions ---
 
@@ -326,7 +325,6 @@ function generateUniqueName() {
         return Math.max(min, Math.min(max, value + change));
     }
 
-    // *** THIS IS THE MISSING FUNCTION ***
     function mutateColor(parentColor) {
         // Safety check (good practice, though the root cause was the missing function)
         if (!parentColor || typeof parentColor.h === 'undefined' || typeof parentColor.s === 'undefined' || typeof parentColor.l === 'undefined') {
@@ -342,35 +340,34 @@ function generateUniqueName() {
         };
         return newColor;
     }
-    // *** END OF MISSING FUNCTION ***
 
-
-    function mutateSize(parentSize) {
-        const minSize = 10;
-        const maxSize = 100;
-        // Added safety check for parentSize
-        if (typeof parentSize !== 'number' || isNaN(parentSize)) {
-            console.error("Invalid parentSize passed to mutateSize. Using default.", parentSize);
-            parentSize = 30; // Default size
-        }
-        const changeFactor = 1 + (Math.random() * 2 - 1) * MUTATION_CONFIG.sizeChangeFactor;
-        return Math.max(minSize, Math.min(maxSize, parentSize * changeFactor));
+    // Helper function for mutation (keep mutateValue)
+    function mutateValue(value, shift, min, max) {
+        const change = (Math.random() * 2 - 1) * shift;
+        return Math.max(min, Math.min(max, value + change));
     }
 
-    function mutateShape(parentShape) {
-         // Added safety check for parentShape
-        if (typeof parentShape !== 'string' || !parentShape) {
-             console.error("Invalid parentShape passed to mutateShape. Using default.", parentShape);
-             parentShape = 'square'; // Default shape
-        }
+    // Mutates border radius gradually
+function mutateBorderRadius(parentRadius) {
+    const change = (Math.random() * 2 - 1) * MUTATION_CONFIG.borderRadiusChange;
+    // Clamp between 0% (square) and 50% (circle)
+    const newRadius = Math.max(0, Math.min(50, parentRadius + change));
+    return newRadius;
+}
 
-        // Simple mutation: Square <-> Circle for now
-        if (Math.random() < MUTATION_CONFIG.shapeMutationChance) {
-            return parentShape === 'square' ? 'circle' : 'square';
-        }
-        return parentShape;
-        // TODO: Add more shapes later
+// Mutates a single dimension (width or height)
+function mutateDimension(parentDimension, changeFactor) {
+    // Ensure parentDimension is valid
+     if (typeof parentDimension !== 'number' || isNaN(parentDimension)) {
+        console.warn("Invalid parentDimension, using default 30", parentDimension);
+        parentDimension = 30;
     }
+
+    const factor = 1 + (Math.random() * 2 - 1) * changeFactor;
+    const newDimension = parentDimension * factor;
+    // Clamp between min/max dimension config
+    return Math.max(MUTATION_CONFIG.minDimension, Math.min(MUTATION_CONFIG.maxDimension, newDimension));
+}
 
 
     // --- Panning Logic (No changes needed here, should work fine) ---
