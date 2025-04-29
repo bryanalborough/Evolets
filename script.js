@@ -191,12 +191,20 @@ function generateUniqueName() {
     }
 
     function renderConnector(parentData, childData) {
-    // *** ADD LOGGING HERE ***
-    console.log(`Rendering connector from Parent ${parentData.id} (x:${parentData.x}, y:${parentData.y}) to Child ${childData.id} (x:${childData.x}, y:${childData.y})`);
-    if (typeof parentData.x !== 'number' || isNaN(parentData.x) || /*... check all 4 coords ...*/) {
-         console.error("!!! Invalid position data in renderConnector:", {parentData, childData});
-    }
-   // *** END LOGGING ***
+// *** ADD LOGGING HERE ***
+        console.log(`Rendering connector from Parent ${parentData.id} (x:${parentData.x}, y:${parentData.y}) to Child ${childData.id} (x:${childData.x}, y:${childData.y})`);
+
+        // Corrected IF condition: Check all 4 coordinates individually
+        if (typeof parentData.x !== 'number' || isNaN(parentData.x) ||
+            typeof parentData.y !== 'number' || isNaN(parentData.y) ||
+            typeof childData.x !== 'number' || isNaN(childData.x) ||
+            typeof childData.y !== 'number' || isNaN(childData.y)
+        ) { // <<< The condition closes here
+             console.error("!!! Invalid position data in renderConnector:", {parentData, childData});
+             // Optionally return here if data is invalid to prevent further errors
+             // return;
+        }
+       // *** END LOGGING ***
         // *** Calculations use direct pixel coordinates from data ***
         const parentCenterX = parentData.x;
         const parentCenterY = parentData.y;
