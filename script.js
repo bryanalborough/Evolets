@@ -80,7 +80,7 @@ function initializeSimulation() {
     console.log("Simulation Reset and Initialized with name:", firstSpecies.name);
     console.log("Initial ScrollLeft:", container.scrollLeft); // Check initial scroll
     // --- Core Functions ---
-
+}
 
 
 // --- Helper Function ---
