@@ -8,16 +8,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const INITIAL_SPECIES_Y_POS = 50; // Pixels from top
 
     const MUTATION_CONFIG = {
-        hueShift: 10,
-        saturationShift: 8,
-        lightnessShift: 8,
+        hueShift: 20,
+        saturationShift: 10,
+        lightnessShift: 10,
         borderRadiusChange: 6,      // Max % change in border radius per step (+/-)
         widthChangeFactor: 0.15,    // Max relative width change (e.g., 0.15 = +/- 15%)
         heightChangeFactor: 0.15,   // Max relative height change
         minDimension: 10,          // Min width/height in pixels
         maxDimension: 100,         // Max width/height in pixels
-        eyeSizeFactorChange: 0.1,   // Max relative change (e.g., 0.1 = +/- 10%)
-        eyeOffsetXChange: 0.1,      // Max relative change
+        eyeSizeFactorChange: 0.2,   // Max relative change (e.g., 0.1 = +/- 10%)
+        eyeOffsetXChange: 0.2,      // Max relative change
         minEyeSizeFactor: 0.05,     // Min eye size relative to avg body dim (5%)
         maxEyeSizeFactor: 0.35,     // Max eye size (35%)
         minEyeOffsetX: 0.05,        // Min horizontal offset from center (5% of width)
@@ -80,10 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
         s: getRandomInRange(40, 100), // Avoid desaturated colors initially
         l: getRandomInRange(40, 75)   // Avoid too dark/light initially
     };
-    const initialEyeSize = getRandomInRange(MUTATION_CONFIG.minEyeSize, 10); // Eyes between min and 10px initially
+    const initialEyeSize = getRandomInRange(5, 12); // Eyes between 5 and 10px initially
     const initialPupilRatio = getRandomInRange(MUTATION_CONFIG.minPupilRatio, MUTATION_CONFIG.maxPupilRatio);
-    // Calculate offset relative to the initial random dimensions
-    // Let's limit offset to +/- 30% of dimension initially
     const initialEyeOffsetX = getRandomInRange(-0.3, 0.3) * initialWidth;
     const initialEyeOffsetY = getRandomInRange(-0.3, 0.3) * initialHeight;
     // --- End Random Generation ---
