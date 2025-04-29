@@ -92,7 +92,8 @@ button#reset-button {
 /* Remove old .species styles or rename if needed */
 /* Make sure .speciated styles target the right element(s) now */
 .speciated .species-shape { /* Example: target shape within speciated container */
-   border-color: #aaa;
+    border-color: #aaa;
+    position: relative;
    /* opacity: 0.8; */
 }
 
