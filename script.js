@@ -277,8 +277,13 @@ function generateUniqueName() {
         const currentHorizontalSpread = LAYOUT_CONFIG.baseHorizontalSpread * Math.pow(LAYOUT_CONFIG.spreadIncreaseFactor, parentData.generation);
 
         // Child center X offset using fixed pixel spread relative to parent's X
-        const horizontalOffsetPixels = LAYOUT_CONFIG.horizontalSpreadPixels * horizontalFactor;
+        const horizontalOffsetPixels = currentHorizontalSpread * horizontalFactor;
         const childPixelCenterX = parentPixelCenterX + horizontalOffsetPixels;
+
+        if (isNaN(childPixelCenterX) || isNaN(childPixelCenterY)) {
+        console.error("!!! Calculated child coordinates are NaN!", { childX: childPixelCenterX, childY: childPixelCenterY, parentX: parentPixelCenterX, parentY: parentPixelCenterY, offset: horizontalOffsetPixels, spread: currentHorizontalSpread });
+        return; // Stop processing this child if coords are bad
+        }
 
         // *** Store child's absolute pixel coordinates ***
         childData.x = childPixelCenterX;
