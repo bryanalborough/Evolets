@@ -44,10 +44,10 @@ body {
     position: absolute;
     background-color: #555; /* Dark grey lines */
     height: 2px; /* Line thickness */
-    transform-origin: 0 50%; /* Rotate line from its start point */
+    transform-origin: 0 50%; /* Rotate line from its start point (left center) */
     z-index: -1; /* Draw lines behind shapes */
+    pointer-events: none; /* Prevent lines from interfering with clicks */
 }
-
 /* Style for species that have already speciated */
 .speciated {
     cursor: default;
