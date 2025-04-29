@@ -173,7 +173,24 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSpecies(childData);
         renderConnector(parentData, childData);
     }
+    
+    function mutateColor(parentColor) {
+    // *** ADD THIS CHECK ***
+    if (!parentColor || typeof parentColor.h === 'undefined' || typeof parentColor.s === 'undefined' || typeof parentColor.l === 'undefined') {
+         console.error("Invalid or missing parentColor passed to mutateColor. Using default.", parentColor);
+         // Return a fallback default color to prevent the crash
+         return { h: Math.random() * 360, s: 80, l: 60 }; // Random hue, fixed saturation/lightness
+    }
+    // *** END OF CHECK ***
 
+    // Original mutation logic
+    const newColor = {
+        h: (parentColor.h + mutateValue(0, MUTATION_CONFIG.hueShift, -MUTATION_CONFIG.hueShift, MUTATION_CONFIG.hueShift) + 360) % 360,
+        s: mutateValue(parentColor.s, MUTATION_CONFIG.saturationShift, 30, 100),
+        l: mutateValue(parentColor.l, MUTATION_CONFIG.lightnessShift, 30, 80)
+    };
+    return newColor;
+}
 
     // --- Mutation Functions (No changes needed) ---
     function mutateValue(value, shift, min, max) { /* ... */ }
