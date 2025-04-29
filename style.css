@@ -7,13 +7,15 @@ body {
 }
 
 #simulator-container {
-    position: relative; /* Crucial for absolute positioning of children */
-    width: 90%;
-    min-height: 600px; /* Adjust as needed */
+    position: relative;
+    width: 90%; /* Or a fixed pixel width if you prefer */
+    max-width: 1200px; /* Optional: limit max width on large screens */
+    height: 70vh; /* Use viewport height, or fixed pixels like 600px */
     margin: 20px auto;
     background-color: white;
     border: 1px solid #ccc;
-    overflow: auto; /* Add scrollbars if content overflows */
+    overflow: auto; /* IMPORTANT: Allows scrolling/panning */
+    cursor: grab;   /* Indicate pannable */
 }
 
 .species {
