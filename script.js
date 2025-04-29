@@ -16,6 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
         heightChangeFactor: 0.15,   // Max relative height change
         minDimension: 10,          // Min width/height in pixels
         maxDimension: 100,         // Max width/height in pixels
+        eyeSizeFactorChange: 0.1,   // Max relative change (e.g., 0.1 = +/- 10%)
+        eyeOffsetXChange: 0.1,      // Max relative change
+        minEyeSizeFactor: 0.05,     // Min eye size relative to avg body dim (5%)
+        maxEyeSizeFactor: 0.35,     // Max eye size (35%)
+        minEyeOffsetX: 0.05,        // Min horizontal offset from center (5% of width)
+        maxEyeOffsetX: 0.4,         // Max horizontal offset (40% of width)
     };
 
     const LAYOUT_CONFIG = {
@@ -70,6 +76,8 @@ function initializeSimulation() {
         height: 30,
         borderRadiusPercent: 0, // Start as a square (0%)
         color: { h: 0, s: 100, l: 50 },
+        eyeSizeFactor: 0.15, // Eyes are 15% of average dimension initially
+        eyeOffsetX: 0.2,     // Eyes positioned 20% of width from center
         canSpeciate: true,
         name: generateUniqueName()
     };
@@ -147,15 +155,31 @@ function renderSpecies(speciesData) {
 
     const shapeEl = document.createElement('div');
     shapeEl.classList.add('species-shape');
-    // --- REMOVE shape class ---
-    // shapeEl.classList.add(`shape-${speciesData.shape}`);
+    shapeEl.style.position = 'relative';
+     // Style shape body
+     shapeEl.style.width = `${speciesData.width}px`;
+     shapeEl.style.height = `${speciesData.height}px`;
+     shapeEl.style.borderRadius = `${speciesData.borderRadiusPercent}%`;
+     shapeEl.style.backgroundColor = `hsl(${speciesData.color.h}, ${speciesData.color.s}%, ${speciesData.color.l}%)`;
 
-    // --- Use NEW properties for styling ---
-    shapeEl.style.width = `${speciesData.width}px`;
-    shapeEl.style.height = `${speciesData.height}px`;
-    shapeEl.style.borderRadius = `${speciesData.borderRadiusPercent}%`; // Apply border radius %
-    // --- Keep color ---
-    shapeEl.style.backgroundColor = `hsl(${speciesData.color.h}, ${speciesData.color.s}%, ${speciesData.color.l}%)`;
+     // --- Create and Position Eyes ---
+    const avgDimension = (speciesData.width + speciesData.height) / 2;
+    const eyeDiameter = Math.max(2, avgDimension * speciesData.eyeSizeFactor); // Min 2px diameter
+    const pupilDiameter = Math.max(1, eyeDiameter * 0.5); // Pupil is half eye size, min 1px
+    const horizontalOffset = speciesData.width * speciesData.eyeOffsetX;
+    // Position eyes slightly above the vertical center (e.g., 40% down)
+    const eyeCenterY = speciesData.height * 0.4;
+
+     // Left Eye
+     const leftEyeCenterX = (speciesData.width / 2) - horizontalOffset;
+     const leftEye = createEyeElement(eyeDiameter, pupilDiameter, leftEyeCenterX, eyeCenterY);
+     shapeEl.appendChild(leftEye);
+ 
+     // Right Eye
+     const rightEyeCenterX = (speciesData.width / 2) + horizontalOffset;
+     const rightEye = createEyeElement(eyeDiameter, pupilDiameter, rightEyeCenterX, eyeCenterY);
+     shapeEl.appendChild(rightEye);
+     // --- End Eye Creation ---
 
     const labelEl = document.createElement('div');
     labelEl.classList.add('species-label');
@@ -268,6 +292,28 @@ function renderSpecies(speciesData) {
     createAndRenderChild(parentData, 1);
 }
 
+// --- NEW Helper function to create an eye element ---
+function createEyeElement(eyeDiameter, pupilDiameter, centerX, centerY) {
+    const eye = document.createElement('div');
+    eye.classList.add('eye');
+    eye.style.width = `${eyeDiameter}px`;
+    eye.style.height = `${eyeDiameter}px`;
+    // Position eye's top-left corner based on its center
+    eye.style.left = `${centerX - eyeDiameter / 2}px`;
+    eye.style.top = `${centerY - eyeDiameter / 2}px`;
+
+    const pupil = document.createElement('div');
+    pupil.classList.add('pupil');
+    pupil.style.width = `${pupilDiameter}px`;
+    pupil.style.height = `${pupilDiameter}px`;
+    // Position pupil's top-left corner based on its center (relative to eye center)
+    pupil.style.left = `${(eyeDiameter / 2) - (pupilDiameter / 2)}px`;
+    pupil.style.top = `${(eyeDiameter / 2) - (pupilDiameter / 2)}px`;
+
+    eye.appendChild(pupil);
+    return eye;
+}
+
 function createAndRenderChild(parentData, horizontalFactor) {
     // --- Check parent validity (optional but good) ---
     if (typeof parentData.width !== 'number' || isNaN(parentData.width) || typeof parentData.height !== 'number' || isNaN(parentData.height) || typeof parentData.borderRadiusPercent !== 'number' || isNaN(parentData.borderRadiusPercent) || typeof parentData.x !== 'number' || isNaN(parentData.x) || typeof parentData.y !== 'number' || isNaN(parentData.y) || typeof parentData.generation !== 'number' || isNaN(parentData.generation) ) {
@@ -284,6 +330,8 @@ function createAndRenderChild(parentData, horizontalFactor) {
         height: mutateDimension(parentData.height, MUTATION_CONFIG.heightChangeFactor),
         borderRadiusPercent: mutateBorderRadius(parentData.borderRadiusPercent),
         color: mutateColor(parentData.color),
+        eyeSizeFactor: mutateEyeSizeFactor(parentData.eyeSizeFactor),
+        eyeOffsetX: mutateEyeOffsetX(parentData.eyeOffsetX),
         canSpeciate: true,
         name: generateUniqueName(),
         x: NaN, // Initialize to NaN
@@ -364,6 +412,28 @@ function mutateDimension(parentDimension, changeFactor) {
     // Clamp between min/max dimension config
     return Math.max(MUTATION_CONFIG.minDimension, Math.min(MUTATION_CONFIG.maxDimension, newDimension));
 }
+
+// --- Add NEW Eye Mutation Functions ---
+
+// Mutates eye size factor
+function mutateEyeSizeFactor(parentFactor) {
+    const factor = 1 + (Math.random() * 2 - 1) * MUTATION_CONFIG.eyeSizeFactorChange;
+    const newFactor = parentFactor * factor;
+    // Clamp
+    return Math.max(MUTATION_CONFIG.minEyeSizeFactor, Math.min(MUTATION_CONFIG.maxEyeSizeFactor, newFactor));
+}
+
+// Mutates eye horizontal offset factor
+function mutateEyeOffsetX(parentOffset) {
+    const factor = 1 + (Math.random() * 2 - 1) * MUTATION_CONFIG.eyeOffsetXChange;
+    const newOffset = parentOffset * factor;
+    // Clamp
+    return Math.max(MUTATION_CONFIG.minEyeOffsetX, Math.min(MUTATION_CONFIG.maxEyeOffsetX, newOffset));
+}
+
+// Keep mutateValue, mutateBorderRadius, mutateDimension, mutateColor
+
+
 
 
     // --- Panning Logic (No changes needed here, should work fine) ---
