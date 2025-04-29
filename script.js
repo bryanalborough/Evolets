@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const MUTATION_CONFIG = {
         hueShift: 10,
-        saturationShift: 5,
-        lightnessShift: 5,
-        borderRadiusChange: 3,      // Max % change in border radius per step (+/-)
+        saturationShift: 8,
+        lightnessShift: 8,
+        borderRadiusChange: 6,      // Max % change in border radius per step (+/-)
         widthChangeFactor: 0.15,    // Max relative width change (e.g., 0.15 = +/- 15%)
         heightChangeFactor: 0.15,   // Max relative height change
         minDimension: 10,          // Min width/height in pixels
@@ -283,10 +283,6 @@ function createAndRenderChild(parentData, horizontalFactor) {
         width: mutateDimension(parentData.width, MUTATION_CONFIG.widthChangeFactor),
         height: mutateDimension(parentData.height, MUTATION_CONFIG.heightChangeFactor),
         borderRadiusPercent: mutateBorderRadius(parentData.borderRadiusPercent),
-        // --- REMOVED ---
-        // size: mutateSize(parentData.size),
-        // shape: mutateShape(parentData.shape),
-        // --- Keep others ---
         color: mutateColor(parentData.color),
         canSpeciate: true,
         name: generateUniqueName(),
