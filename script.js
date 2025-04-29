@@ -56,30 +56,56 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Add this Set to the State Variables ---
     let generatedNames = new Set(); // To track unique names
 
+    function getRandomInRange(min, max) {
+        return min + Math.random() * (max - min);
+    }
+    
+    
     // --- Initialization Function ---
-function initializeSimulation() {
-    container.innerHTML = '';
-    speciesCounter = 0;
-    generatedNames.clear(); // *** Reset the name set ***
+    function initializeSimulation() {
+        container.innerHTML = '';
+        speciesCounter = 0;
+        generatedNames.clear(); // *** Reset the name set ***
 
-    const HORIZONTAL_PADDING = 2000; // Pixels - choose a large number, enough for expected leftward expansion
-    const containerRect = container.getBoundingClientRect();
-    const initialX = HORIZONTAL_PADDING + (containerRect.width / 2);
+        const HORIZONTAL_PADDING = 2000; // Pixels - choose a large number, enough for expected leftward expansion
+        const containerRect = container.getBoundingClientRect();
+        const initialX = HORIZONTAL_PADDING + (containerRect.width / 2);
+
+         // --- Generate Random Initial Properties ---
+    const initialWidth = getRandomInRange(MUTATION_CONFIG.minDimension, 50); // Start slightly smaller than max possible
+    const initialHeight = getRandomInRange(MUTATION_CONFIG.minDimension, 50);
+    const initialBorderRadius = getRandomInRange(0, 50); // 0% to 50%
+    const initialColor = {
+        h: getRandomInRange(0, 360),
+        s: getRandomInRange(40, 100), // Avoid desaturated colors initially
+        l: getRandomInRange(40, 75)   // Avoid too dark/light initially
+    };
+    const initialEyeSize = getRandomInRange(MUTATION_CONFIG.minEyeSize, 10); // Eyes between min and 10px initially
+    const initialPupilRatio = getRandomInRange(MUTATION_CONFIG.minPupilRatio, MUTATION_CONFIG.maxPupilRatio);
+    // Calculate offset relative to the initial random dimensions
+    // Let's limit offset to +/- 30% of dimension initially
+    const initialEyeOffsetX = getRandomInRange(-0.3, 0.3) * initialWidth;
+    const initialEyeOffsetY = getRandomInRange(-0.3, 0.3) * initialHeight;
+    // --- End Random Generation ---
 
     const firstSpecies = {
         id: speciesCounter++,
         parentId: null,
         generation: 0,
-        x: initialX, // Initial X now includes padding
-        y: INITIAL_SPECIES_Y_POS, // Y remains the same
-        width: 30,
-        height: 30,
-        borderRadiusPercent: 0, // Start as a square (0%)
-        color: { h: 0, s: 100, l: 50 },
-        eyeSizeFactor: 0.15, // Eyes are 15% of average dimension initially
-        eyeOffsetX: 0.2,     // Eyes positioned 20% of width from center
+        x: initialX,
+        y: INITIAL_SPECIES_Y_POS,
+        // --- Assign RANDOMIZED properties ---
+        width: initialWidth,
+        height: initialHeight,
+        borderRadiusPercent: initialBorderRadius,
+        color: initialColor,
+        eyeSize: initialEyeSize,
+        pupilSizeRatio: initialPupilRatio,
+        eyeOffsetX: initialEyeOffsetX,
+        eyeOffsetY: initialEyeOffsetY,
+        // --- End Assignment ---
         canSpeciate: true,
-        name: generateUniqueName()
+        name: generateUniqueName() // Name is still generated uniquely
     };
 
     allSpecies = [firstSpecies];
