@@ -97,3 +97,33 @@ button#reset-button {
    /* opacity: 0.8; */
 }
 
+/* In style.css */
+
+.species-shape {
+    /* ... existing styles ... */
+    position: relative; /* REQUIRED for eye positioning */
+    overflow: hidden;   /* REQUIRED to clip eyes outside bounds */
+    border: 1px solid black;
+}
+
+.eye {
+    position: absolute;
+    /* --- COLOR & SHAPE --- */
+    background-color: white; /* White eyeball */
+    border-radius: 50%;      /* Makes it a circle */
+    /* --- END --- */
+    border: 1px solid #ccc; /* Optional faint border */
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+.pupil {
+    position: absolute;
+     /* --- COLOR & SHAPE --- */
+    background-color: black; /* Black pupil */
+    border-radius: 50%;      /* Makes it a circle */
+     /* --- END --- */
+    box-sizing: border-box;
+}
+
+/* ... other styles ... */
