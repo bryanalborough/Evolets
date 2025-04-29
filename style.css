@@ -1,1 +1,57 @@
+body {
+    font-family: sans-serif;
+    background-color: #f0f0f0; /* Light grey background instead of pure white */
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+}
 
+#simulator-container {
+    position: relative; /* Crucial for absolute positioning of children */
+    width: 90%;
+    min-height: 600px; /* Adjust as needed */
+    margin: 20px auto;
+    background-color: white;
+    border: 1px solid #ccc;
+    overflow: auto; /* Add scrollbars if content overflows */
+}
+
+.species {
+    position: absolute; /* Allows precise placement */
+    cursor: pointer;
+    border: 1px solid black; /* Add a border for visibility */
+    transition: background-color 0.3s, width 0.3s, height 0.3s, border-radius 0.3s; /* Smooth transitions */
+    display: flex; /* For potential future content inside */
+    align-items: center;
+    justify-content: center;
+    font-size: 10px; /* For potential ID display */
+    color: white; /* Text color if needed */
+    text-shadow: 1px 1px 1px black; /* Make text readable */
+}
+
+/* Basic shapes - can add more */
+.shape-square {
+    border-radius: 0%;
+}
+
+.shape-circle {
+    border-radius: 50%;
+}
+
+/* Add more shape classes here later (e.g., .shape-triangle using clip-path) */
+
+.connector {
+    position: absolute;
+    background-color: #555; /* Dark grey lines */
+    height: 2px; /* Line thickness */
+    transform-origin: 0 50%; /* Rotate line from its start point */
+    z-index: -1; /* Draw lines behind shapes */
+}
+
+/* Style for species that have already speciated */
+.speciated {
+    cursor: default;
+    /* Optional: Slightly fade out already speciated items */
+    /* opacity: 0.8; */
+     border-color: #aaa;
+}
