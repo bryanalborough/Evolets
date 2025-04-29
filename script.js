@@ -141,24 +141,31 @@ document.addEventListener('DOMContentLoaded', () => {
         // No need for checkContainerScroll anymore
     }
 
-    function createAndRenderChild(parentData, horizontalFactor) {
-        const childData = {
-            id: speciesCounter++,
-            parentId: parentData.id,
-            generation: parentData.generation + 1,
-            size: mutateSize(parentData.size),
-            color: mutateColor(parentData.color),
-            shape: mutateShape(parentData.shape),
-            canSpeciate: true,
-            // *** x and y will be calculated as PIXELS below ***
-        };
+        function createAndRenderChild(parentData, horizontalFactor) {
+            const childData = {
+                id: speciesCounter++,
+                parentId: parentData.id,
+                generation: parentData.generation + 1, // Child is one generation deeper
+                size: mutateSize(parentData.size),
+                color: mutateColor(parentData.color),
+                shape: mutateShape(parentData.shape),
+                canSpeciate: true,
+                x: 0, // Will be calculated
+                y: 0  // Will be calculated
+            };
 
         // --- Calculate Position (directly in pixels) ---
-        const parentPixelCenterX = parentData.x; // Already in pixels
-        const parentPixelCenterY = parentData.y; // Already in pixels
+        const parentPixelCenterX = parentData.x;
+        const parentPixelCenterY = parentData.y;
 
         // Child center Y in pixels
         const childPixelCenterY = parentPixelCenterY + LAYOUT_CONFIG.verticalSpacing;
+
+        // *** MODIFIED SPREAD CALCULATION ***
+        // Calculate the spread for this specific child's generation
+        // Use parent's generation to determine the spread magnitude away FROM the parent
+        // A power of 0 is 1, so the first split uses baseHorizontalSpread.
+        const currentHorizontalSpread = LAYOUT_CONFIG.baseHorizontalSpread * Math.pow(LAYOUT_CONFIG.spreadIncreaseFactor, parentData.generation);
 
         // Child center X offset using fixed pixel spread relative to parent's X
         const horizontalOffsetPixels = LAYOUT_CONFIG.horizontalSpreadPixels * horizontalFactor;
