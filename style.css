@@ -42,12 +42,15 @@ body {
 
 .connector {
     position: absolute;
-    background-color: #555; /* Dark grey lines */
-    height: 2px; /* Line thickness */
-    transform-origin: 0 50%; /* Rotate line from its start point (left center) */
-    z-index: -1; /* Draw lines behind shapes */
-    pointer-events: none; /* Prevent lines from interfering with clicks */
+    background-color: #ff0000; /* TEMPORARILY make it bright red for debugging */
+    height: 3px; /* TEMPORARILY make it thicker */
+    transform-origin: 0 50%;
+    z-index: 10; /* TEMPORARILY put it on top */
+    pointer-events: none;
+    border: 1px solid lime; /* TEMPORARILY add a border */
+    /* Other styles might be needed if you find the issue */
 }
+
 /* Style for species that have already speciated */
 .speciated {
     cursor: default;
