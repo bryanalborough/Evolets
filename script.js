@@ -53,28 +53,32 @@ function initializeSimulation() {
     speciesCounter = 0;
     generatedNames.clear(); // *** Reset the name set ***
 
+    const HORIZONTAL_PADDING = 2000; // Pixels - choose a large number, enough for expected leftward expansion
     const containerRect = container.getBoundingClientRect();
-    const initialX = containerRect.width / 2;
+    const initialX = HORIZONTAL_PADDING + (containerRect.width / 2);
 
     const firstSpecies = {
         id: speciesCounter++,
         parentId: null,
         generation: 0,
-        x: initialX,
-        y: INITIAL_SPECIES_Y_POS,
+        x: initialX, // Initial X now includes padding
+        y: INITIAL_SPECIES_Y_POS, // Y remains the same
         size: 30,
         color: { h: 0, s: 100, l: 50 },
         shape: 'square',
         canSpeciate: true,
-        name: generateUniqueName() // *** Generate name for initial species ***
+        name: generateUniqueName()
     };
 
     allSpecies = [firstSpecies];
 
+    // *** Reset scroll to show the initial area, considering padding ***
+    container.scrollLeft = initialX - (containerRect.width / 2); // Scroll so the initial node is centered horizontally
+    container.scrollTop = 0;
+
     renderSpecies(firstSpecies);
     console.log("Simulation Reset and Initialized with name:", firstSpecies.name);
-    }
-
+    console.log("Initial ScrollLeft:", container.scrollLeft); // Check initial scroll
     // --- Core Functions ---
 
 
