@@ -71,3 +71,45 @@ button#reset-button {
     /* opacity: 0.8; */
      border-color: #aaa;
 }
+/* Container for shape + label */
+.species-container {
+    position: absolute;
+    display: flex; /* Arrange shape and label vertically */
+    flex-direction: column;
+    align-items: center; /* Center items horizontally */
+}
+
+/* The actual shape */
+.species-shape {
+    /* position: relative; /* No longer absolute positioned itself */
+    border: 1px solid black;
+    transition: background-color 0.3s, width 0.3s, height 0.3s, border-radius 0.3s, border-color 0.3s;
+    /* Keep shape styles: */
+    &.shape-square { border-radius: 0%; }
+    &.shape-circle { border-radius: 50%; }
+}
+
+/* Style for the label below the shape */
+.species-label {
+    font-size: 10px;
+    color: #333;
+    margin-top: 4px; /* Space between shape and label */
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.7); /* Semi-transparent background */
+    padding: 1px 4px;
+    border-radius: 3px;
+    pointer-events: none; /* Prevent label from interfering with clicks on shape */
+    white-space: nowrap; /* Prevent long names wrapping initially */
+    /* Consider adding max-width and overflow handling if names get too long */
+     /* max-width: 100px; */
+     /* overflow: hidden; */
+     /* text-overflow: ellipsis; */
+}
+
+/* Remove old .species styles or rename if needed */
+/* Make sure .speciated styles target the right element(s) now */
+.speciated .species-shape { /* Example: target shape within speciated container */
+   border-color: #aaa;
+   /* opacity: 0.8; */
+}
+
