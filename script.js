@@ -16,9 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const LAYOUT_CONFIG = {
-        verticalSpacing: 50,        // Pixels (Keep as is or adjust)
+        verticalSpacing: 90,        // Pixels (Keep as is or adjust)
         // horizontalSpreadPixels: 120 // <-- Remove or comment out this line
-        baseHorizontalSpread: 40,  // Base spread in pixels for the first generation's children
+        baseHorizontalSpread: 60,  // Base spread in pixels for the first generation's children
         spreadIncreaseFactor: 1.2   // Multiply spread by this factor for each subsequent generation (adjust > 1.0)
                                     // Values between 1.1 and 1.4 often work well.
     };
