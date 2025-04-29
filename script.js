@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('simulator-container');
-    const resetButton = document.getElementById('reset-button'); // Get reset button
-    let speciesCounter = 0;
+    let speciesCounter = 0; // To give unique IDs
 
     // --- Configuration ---
     // Keep INITIAL_SPECIES as a constant template
@@ -18,9 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const MUTATION_CONFIG = {
-        hueShift: 20,
-        saturationShift: 10,
-        lightnessShift: 10,
+        hueShift: 10,
+        saturationShift: 5,
+        lightnessShift: 5,
         sizeChangeFactor: 0.2,
         shapeMutationChance: 0.3
     };
@@ -37,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isPanning = false;
     let startX, startY, scrollLeftStart, scrollTopStart;
 
-    // --- Initialization Function ---
+     // --- Initialization Function ---
     function initializeSimulation() {
         // 1. Clear the container
         container.innerHTML = '';
@@ -51,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
          };
         allSpecies = [firstSpecies];
 
-        // 3. Reset scroll/pan position
+               // 3. Reset scroll/pan position
         container.scrollLeft = 0;
         container.scrollTop = 0;
         // Center the initial view somewhat (optional)
@@ -63,9 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log("Simulation Reset");
     }
+    
+    // --- Core Functions ---
 
-
-    // --- Core Functions (renderSpecies, renderConnector - keep as before) ---
     function renderSpecies(speciesData) {
         const el = document.createElement('div');
         el.classList.add('species');
@@ -95,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.width = `${speciesData.size}px`;
         el.style.height = `${speciesData.size}px`;
         el.style.backgroundColor = `hsl(${speciesData.color.h}, ${speciesData.color.s}%, ${speciesData.color.l}%)`;
+        // el.textContent = speciesData.id;
 
         if (speciesData.canSpeciate) {
             el.addEventListener('click', handleSpeciationClick);
@@ -138,13 +138,15 @@ document.addEventListener('DOMContentLoaded', () => {
         container.appendChild(line);
     }
 
-    // --- Event Handlers ---
+
     function handleSpeciationClick(event) {
         const parentElement = event.target;
         const parentId = parseInt(parentElement.dataset.id);
         const parentData = allSpecies.find(s => s.id === parentId);
 
-        if (!parentData || !parentData.canSpeciate) return;
+        if (!parentData || !parentData.canSpeciate) {
+            return;
+        }
 
         parentData.canSpeciate = false;
         parentElement.removeEventListener('click', handleSpeciationClick);
@@ -152,10 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         createAndRenderChild(parentData, -1); // Child 1 (left)
         createAndRenderChild(parentData, 1);  // Child 2 (right)
-
-        // Check if container needs resizing (simplistic check)
-        // A more robust solution might track max/min x/y percentages
-        checkContainerScroll();
     }
 
     function createAndRenderChild(parentData, horizontalFactor) {
@@ -167,9 +165,10 @@ document.addEventListener('DOMContentLoaded', () => {
             color: mutateColor(parentData.color),
             shape: mutateShape(parentData.shape),
             canSpeciate: true
+            // x and y will be calculated below
         };
 
-        // --- Calculate Position (using pixels for spacing logic) ---
+   // --- Calculate Position (using pixels for spacing logic) ---
         const containerRect = container.getBoundingClientRect(); // Use visible rect for initial basis
         const containerScrollWidth = container.scrollWidth;
         const containerScrollHeight = container.scrollHeight;
@@ -202,31 +201,37 @@ document.addEventListener('DOMContentLoaded', () => {
         renderConnector(parentData, childData);
     }
 
-    // --- Mutation Functions (keep as before) ---
-    function mutateValue(value, shift, min, max) { /* ... */ }
-    function mutateColor(parentColor) { /* ... */ }
-    function mutateSize(parentSize) { /* ... */ }
-    function mutateShape(parentShape) { /* ... */ }
 
-
-    // --- Panning Logic ---
-    function handleMouseDown(e) {
-        // Only pan with the primary mouse button, and not on species elements
-        if (e.button !== 0 || e.target.classList.contains('species')) {
-            return;
-        }
-        isPanning = true;
-        startX = e.pageX - container.offsetLeft; // Position relative to container edge
-        startY = e.pageY - container.offsetTop;
-        scrollLeftStart = container.scrollLeft;
-        scrollTopStart = container.scrollTop;
-        container.style.cursor = 'grabbing'; // Change cursor immediately
-        container.style.userSelect = 'none'; // Prevent text selection during drag
-         // Prevent default image drag or other unwanted behaviors
-        e.preventDefault();
+    // --- Mutation Functions --- (Keep your existing mutation functions)
+    function mutateValue(value, shift, min, max) {
+        const change = (Math.random() * 2 - 1) * shift;
+        return Math.max(min, Math.min(max, value + change));
     }
 
-    function handleMouseMove(e) {
+    function mutateColor(parentColor) {
+        const newColor = {
+            h: (parentColor.h + mutateValue(0, MUTATION_CONFIG.hueShift, -MUTATION_CONFIG.hueShift, MUTATION_CONFIG.hueShift) + 360) % 360,
+            s: mutateValue(parentColor.s, MUTATION_CONFIG.saturationShift, 30, 100),
+            l: mutateValue(parentColor.l, MUTATION_CONFIG.lightnessShift, 30, 80)
+        };
+        return newColor;
+    }
+
+    function mutateSize(parentSize) {
+        const minSize = 10;
+        const maxSize = 100;
+        const changeFactor = 1 + (Math.random() * 2 - 1) * MUTATION_CONFIG.sizeChangeFactor;
+        return Math.max(minSize, Math.min(maxSize, parentSize * changeFactor));
+    }
+
+    function mutateShape(parentShape) {
+        if (Math.random() < MUTATION_CONFIG.shapeMutationChance) {
+            return parentShape === 'square' ? 'circle' : 'square';
+        }
+        return parentShape;
+    }
+
+     function handleMouseMove(e) {
         if (!isPanning) return;
         e.preventDefault(); // Prevent default during drag
 
@@ -240,14 +245,14 @@ document.addEventListener('DOMContentLoaded', () => {
         container.scrollTop = scrollTopStart - walkY;
     }
 
-    function stopPanning() {
+     function stopPanning() {
         if (!isPanning) return; // Avoid redundant calls
         isPanning = false;
         container.style.cursor = 'grab'; // Restore cursor
         container.style.removeProperty('user-select');
     }
 
-    // --- Helper to check if container needs scrollbars ---
+// --- Helper to check if container needs scrollbars ---
     // Basic check, called after adding children
     function checkContainerScroll() {
        // The 'overflow: auto' CSS handles showing scrollbars automatically.
