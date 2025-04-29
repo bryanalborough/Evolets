@@ -191,7 +191,7 @@ function generateUniqueName() {
     }
 
     function renderConnector(parentData, childData) {
-         console.log(`Rendering connector from Parent ${parentData.id} (x:${parentData.x}, y:${parentData.y}) to Child ${childData.id} (x:${childData.x}, y:${childData.y})`);
+         console.log(`Rendering connector from Parent ${parentData.id} (x:${parentData.x}, y:${parentData.y}) to Child ${childData.id} (x:${childData.x}, y:${childData.y});
         if (typeof parentData.x !== 'number' || isNaN(parentData.x) || /*... check all 4 coords ...*/) {
          console.error("!!! Invalid position data in renderConnector:", {parentData, childData});
     }
