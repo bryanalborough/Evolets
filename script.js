@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
         s: getRandomInRange(40, 100), // Avoid desaturated colors initially
         l: getRandomInRange(40, 75)   // Avoid too dark/light initially
     };
-    const initialEyeSize = getRandomInRange(MUTATION_CONFIG.minEyeSize, 10); // Eyes between min and 10px initially
+    const initialEyeSize = getRandomInRange(5, 12); // Eyes between min and 10px initially
     const initialPupilRatio = getRandomInRange(MUTATION_CONFIG.minPupilRatio, MUTATION_CONFIG.maxPupilRatio);
     // Calculate offset relative to the initial random dimensions
     // Let's limit offset to +/- 30% of dimension initially
