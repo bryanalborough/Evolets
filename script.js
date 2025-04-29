@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('simulator-container');
     let speciesCounter = 0; // To give unique IDs
 
-    // --- Configuration ---
+    // --- Configuration --- (Keep your existing config)
     const INITIAL_SPECIES = {
         id: speciesCounter++,
         parentId: null,
@@ -16,31 +16,31 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const MUTATION_CONFIG = {
-        hueShift: 20,      // Max degrees hue can change (+/-)
-        saturationShift: 10, // Max percent saturation can change (+/-)
-        lightnessShift: 10,  // Max percent lightness can change (+/-)
-        sizeChangeFactor: 0.2, // Max relative size change (e.g., 0.2 = +/- 20%)
-        shapeMutationChance: 0.3 // 30% chance to change shape (if possible)
+        hueShift: 20,
+        saturationShift: 10,
+        lightnessShift: 10,
+        sizeChangeFactor: 0.2,
+        shapeMutationChance: 0.3
     };
 
     const LAYOUT_CONFIG = {
-        verticalSpacing: 80, // Pixels between generations
-        horizontalSpread: 100 // Initial pixels spread for children
+        verticalSpacing: 80,
+        horizontalSpread: 100
     };
 
-    let allSpecies = [INITIAL_SPECIES]; // Array to hold all species data
+    let allSpecies = [INITIAL_SPECIES];
 
     // --- Core Functions ---
 
-    // Function to create and place a species element on the page
     function renderSpecies(speciesData) {
         const el = document.createElement('div');
         el.classList.add('species');
-        el.classList.add(`shape-${speciesData.shape}`); // Add shape class
-        el.dataset.id = speciesData.id; // Store ID in data attribute
+        el.classList.add(`shape-${speciesData.shape}`);
+        el.dataset.id = speciesData.id;
 
-        // Calculate position in pixels
+        // Calculate position IN PIXELS for styling
         const containerRect = container.getBoundingClientRect();
+        // Adjust for centering the element based on its size
         const pixelX = (speciesData.x / 100) * containerRect.width - (speciesData.size / 2);
         const pixelY = (speciesData.y / 100) * containerRect.height - (speciesData.size / 2);
 
@@ -50,66 +50,76 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.width = `${speciesData.size}px`;
         el.style.height = `${speciesData.size}px`;
         el.style.backgroundColor = `hsl(${speciesData.color.h}, ${speciesData.color.s}%, ${speciesData.color.l}%)`;
-        // el.textContent = speciesData.id; // Optional: Display ID
+        // el.textContent = speciesData.id;
 
         if (speciesData.canSpeciate) {
             el.addEventListener('click', handleSpeciationClick);
         } else {
-             el.classList.add('speciated');
+            el.classList.add('speciated');
         }
 
         container.appendChild(el);
-        return el; // Return the element reference
+        return el;
     }
 
-    // Function to draw a line between two points (centers of species)
+    // *** Function to draw a line between two species data objects ***
     function renderConnector(parentData, childData) {
+        // Get container dimensions each time, in case of resize (though not handled dynamically here)
         const containerRect = container.getBoundingClientRect();
 
-        // Calculate center points in pixels
-        const parentX = (parentData.x / 100) * containerRect.width;
-        const parentY = (parentData.y / 100) * containerRect.height;
-        const childX = (childData.x / 100) * containerRect.width;
-        const childY = (childData.y / 100) * containerRect.height;
+        // Calculate CENTER points in pixels relative to the container
+        const parentCenterX = (parentData.x / 100) * containerRect.width;
+        const parentCenterY = (parentData.y / 100) * containerRect.height;
+        const childCenterX = (childData.x / 100) * containerRect.width;
+        const childCenterY = (childData.y / 100) * containerRect.height;
 
-        const deltaX = childX - parentX;
-        const deltaY = childY - parentY;
+        // Calculate differences
+        const deltaX = childCenterX - parentCenterX;
+        const deltaY = childCenterY - parentCenterY;
 
+        // Calculate length of the line (hypotenuse)
         const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI); // Angle in degrees
 
+        // Calculate angle (using atan2 for correct quadrant handling)
+        // Convert radians to degrees
+        const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+
+        // Create the line element
         const line = document.createElement('div');
         line.classList.add('connector');
 
-        line.style.left = `${parentX}px`;
-        line.style.top = `${parentY}px`;
+        // Position the line's start point (left edge) at the parent's center
+        line.style.left = `${parentCenterX}px`;
+        line.style.top = `${parentCenterY}px`;
+
+        // Set the line's width to the calculated length
         line.style.width = `${length}px`;
+
+        // Rotate the line to point towards the child's center
         line.style.transform = `rotate(${angle}deg)`;
 
+        // Add the line to the container
         container.appendChild(line);
     }
 
-    // Function triggered when a species is clicked
+
     function handleSpeciationClick(event) {
         const parentElement = event.target;
         const parentId = parseInt(parentElement.dataset.id);
         const parentData = allSpecies.find(s => s.id === parentId);
 
         if (!parentData || !parentData.canSpeciate) {
-            return; // Should not happen if listener is removed, but good practice
+            return;
         }
 
-        // Mark parent as speciated and update visually
         parentData.canSpeciate = false;
         parentElement.removeEventListener('click', handleSpeciationClick);
         parentElement.classList.add('speciated');
 
-        // Create two children
         createAndRenderChild(parentData, -1); // Child 1 (left)
         createAndRenderChild(parentData, 1);  // Child 2 (right)
     }
 
-    // Function to create data for, render, and connect a child species
     function createAndRenderChild(parentData, horizontalFactor) {
         const childData = {
             id: speciesCounter++,
@@ -119,42 +129,56 @@ document.addEventListener('DOMContentLoaded', () => {
             color: mutateColor(parentData.color),
             shape: mutateShape(parentData.shape),
             canSpeciate: true
+            // x and y will be calculated below
         };
 
-        // Calculate position
-        const containerRect = container.getBoundingClientRect();
-        const parentPixelY = (parentData.y / 100) * containerRect.height;
-        const childPixelY = parentPixelY + LAYOUT_CONFIG.verticalSpacing;
-        const horizontalOffset = (LAYOUT_CONFIG.horizontalSpread / Math.pow(1.5, parentData.generation)) * horizontalFactor; // Spread narrows slightly in deeper generations
-        const parentPixelX = (parentData.x / 100) * containerRect.width;
-        const childPixelX = parentPixelX + horizontalOffset;
+        // --- Calculate Position ---
+        const containerRect = container.getBoundingClientRect(); // Need dimensions for pixel calculations
 
-        // Convert back to percentages for storage
-        childData.x = (childPixelX / containerRect.width) * 100;
-        childData.y = (childPixelY / containerRect.height) * 100;
+        // Calculate parent's center Y in pixels
+        const parentPixelCenterY = (parentData.y / 100) * containerRect.height;
+        // Calculate child's center Y in pixels
+        const childPixelCenterY = parentPixelCenterY + LAYOUT_CONFIG.verticalSpacing;
 
-         // Clamp positions to prevent going too far off-screen (simple clamping)
-        childData.x = Math.max(5, Math.min(95, childData.x));
-        childData.y = Math.max(5, Math.min(95, childData.y));
+        // Calculate horizontal offset - narrows slightly in deeper generations
+        const horizontalOffsetPixels = (LAYOUT_CONFIG.horizontalSpread / Math.pow(1.5, parentData.generation)) * horizontalFactor;
+        // Calculate parent's center X in pixels
+        const parentPixelCenterX = (parentData.x / 100) * containerRect.width;
+         // Calculate child's center X in pixels
+        const childPixelCenterX = parentPixelCenterX + horizontalOffsetPixels;
 
+        // --- Convert child's center pixel coordinates back to percentages for storage ---
+        childData.x = (childPixelCenterX / containerRect.width) * 100;
+        childData.y = (childPixelCenterY / containerRect.height) * 100;
 
+        // --- Clamp positions to prevent going too far off-screen (simple clamping) ---
+        // Adjust clamping based on the child's size to keep it mostly visible
+        const halfSizeXPerc = (childData.size / 2 / containerRect.width) * 100;
+        const halfSizeYPerc = (childData.size / 2 / containerRect.height) * 100;
+        childData.x = Math.max(halfSizeXPerc, Math.min(100 - halfSizeXPerc, childData.x));
+        childData.y = Math.max(halfSizeYPerc, Math.min(100 - halfSizeYPerc, childData.y)); // Keep within vertical bounds too
+
+        // --- Add to list, Render Shape, and Render Connector ---
         allSpecies.push(childData);
-        renderSpecies(childData);
-        renderConnector(parentData, childData);
+        renderSpecies(childData); // Render the shape itself
+
+        // *** THIS IS THE CRUCIAL ADDITION ***
+        renderConnector(parentData, childData); // Draw the line connecting parent and child
+
     }
 
-    // --- Mutation Functions ---
 
+    // --- Mutation Functions --- (Keep your existing mutation functions)
     function mutateValue(value, shift, min, max) {
-        const change = (Math.random() * 2 - 1) * shift; // Random change +/- shift
+        const change = (Math.random() * 2 - 1) * shift;
         return Math.max(min, Math.min(max, value + change));
     }
 
     function mutateColor(parentColor) {
         const newColor = {
-            h: (parentColor.h + mutateValue(0, MUTATION_CONFIG.hueShift, -MUTATION_CONFIG.hueShift, MUTATION_CONFIG.hueShift) + 360) % 360, // Keep hue in 0-360 range
-            s: mutateValue(parentColor.s, MUTATION_CONFIG.saturationShift, 30, 100), // Keep saturation reasonable
-            l: mutateValue(parentColor.l, MUTATION_CONFIG.lightnessShift, 30, 80)    // Keep lightness reasonable
+            h: (parentColor.h + mutateValue(0, MUTATION_CONFIG.hueShift, -MUTATION_CONFIG.hueShift, MUTATION_CONFIG.hueShift) + 360) % 360,
+            s: mutateValue(parentColor.s, MUTATION_CONFIG.saturationShift, 30, 100),
+            l: mutateValue(parentColor.l, MUTATION_CONFIG.lightnessShift, 30, 80)
         };
         return newColor;
     }
@@ -167,16 +191,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function mutateShape(parentShape) {
-        // Simple mutation: Square <-> Circle for now
         if (Math.random() < MUTATION_CONFIG.shapeMutationChance) {
             return parentShape === 'square' ? 'circle' : 'square';
         }
         return parentShape;
-        // TODO: Add more shapes (triangle, star) later
     }
 
 
     // --- Initialisation ---
-    renderSpecies(INITIAL_SPECIES);
+    renderSpecies(INITIAL_SPECIES); // Render the first species when the page loads
 
 }); // End DOMContentLoaded
