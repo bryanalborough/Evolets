@@ -18,6 +18,10 @@ body {
     cursor: grab;   /* Indicate pannable */
 }
 
+#simulator-container:active {
+    cursor: grabbing; /* Indicate panning is active */
+}
+
 .species {
     position: absolute; /* Allows precise placement */
     cursor: pointer;
@@ -51,6 +55,13 @@ body {
     pointer-events: none;
     
     /* Other styles might be needed if you find the issue */
+}
+
+button#reset-button {
+    padding: 8px 15px;
+    font-size: 1em;
+    cursor: pointer;
+    margin-bottom: 15px;
 }
 
 /* Style for species that have already speciated */
