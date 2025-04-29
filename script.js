@@ -174,14 +174,61 @@ document.addEventListener('DOMContentLoaded', () => {
         renderConnector(parentData, childData);
     }
     
-    function mutateColor(parentColor) {
-    // *** ADD THIS CHECK ***
-    if (!parentColor || typeof parentColor.h === 'undefined' || typeof parentColor.s === 'undefined' || typeof parentColor.l === 'undefined') {
-         console.error("Invalid or missing parentColor passed to mutateColor. Using default.", parentColor);
-         // Return a fallback default color to prevent the crash
-         return { h: Math.random() * 360, s: 80, l: 60 }; // Random hue, fixed saturation/lightness
+    // --- Mutation Functions ---
+
+    // Helper function for mutation
+    function mutateValue(value, shift, min, max) {
+        const change = (Math.random() * 2 - 1) * shift; // Random change +/- shift
+        return Math.max(min, Math.min(max, value + change));
     }
-    // *** END OF CHECK ***
+
+    // *** THIS IS THE MISSING FUNCTION ***
+    function mutateColor(parentColor) {
+        // Safety check (good practice, though the root cause was the missing function)
+        if (!parentColor || typeof parentColor.h === 'undefined' || typeof parentColor.s === 'undefined' || typeof parentColor.l === 'undefined') {
+             console.error("Invalid or missing parentColor passed to mutateColor. Using default.", parentColor);
+             return { h: Math.random() * 360, s: 80, l: 60 };
+        }
+
+        // Actual mutation logic
+        const newColor = {
+            h: (parentColor.h + mutateValue(0, MUTATION_CONFIG.hueShift, -MUTATION_CONFIG.hueShift, MUTATION_CONFIG.hueShift) + 360) % 360, // Keep hue in 0-360 range
+            s: mutateValue(parentColor.s, MUTATION_CONFIG.saturationShift, 30, 100), // Keep saturation reasonable
+            l: mutateValue(parentColor.l, MUTATION_CONFIG.lightnessShift, 30, 80)    // Keep lightness reasonable
+        };
+        return newColor;
+    }
+    // *** END OF MISSING FUNCTION ***
+
+
+    function mutateSize(parentSize) {
+        const minSize = 10;
+        const maxSize = 100;
+        // Added safety check for parentSize
+        if (typeof parentSize !== 'number' || isNaN(parentSize)) {
+            console.error("Invalid parentSize passed to mutateSize. Using default.", parentSize);
+            parentSize = 30; // Default size
+        }
+        const changeFactor = 1 + (Math.random() * 2 - 1) * MUTATION_CONFIG.sizeChangeFactor;
+        return Math.max(minSize, Math.min(maxSize, parentSize * changeFactor));
+    }
+
+    function mutateShape(parentShape) {
+         // Added safety check for parentShape
+        if (typeof parentShape !== 'string' || !parentShape) {
+             console.error("Invalid parentShape passed to mutateShape. Using default.", parentShape);
+             parentShape = 'square'; // Default shape
+        }
+
+        // Simple mutation: Square <-> Circle for now
+        if (Math.random() < MUTATION_CONFIG.shapeMutationChance) {
+            return parentShape === 'square' ? 'circle' : 'square';
+        }
+        return parentShape;
+        // TODO: Add more shapes later
+    }
+
+    
 
     // Original mutation logic
     const newColor = {
