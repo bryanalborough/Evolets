@@ -228,22 +228,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // TODO: Add more shapes later
     }
 
-    
-
-    // Original mutation logic
-    const newColor = {
-        h: (parentColor.h + mutateValue(0, MUTATION_CONFIG.hueShift, -MUTATION_CONFIG.hueShift, MUTATION_CONFIG.hueShift) + 360) % 360,
-        s: mutateValue(parentColor.s, MUTATION_CONFIG.saturationShift, 30, 100),
-        l: mutateValue(parentColor.l, MUTATION_CONFIG.lightnessShift, 30, 80)
-    };
-    return newColor;
-}
-
-    // --- Mutation Functions (No changes needed) ---
-    function mutateValue(value, shift, min, max) { /* ... */ }
-    function mutateColor(parentColor) { /* ... */ }
-    function mutateSize(parentSize) { /* ... */ }
-    function mutateShape(parentShape) { /* ... */ }
 
     // --- Panning Logic (No changes needed here, should work fine) ---
     function handleMouseDown(e) {
