@@ -1,17 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('simulator-container');
-    let speciesCounter = 0; // To give unique IDs
+    const resetButton = document.getElementById('reset-button'); // Get reset button
+    let speciesCounter = 0;
 
-    // --- Configuration --- (Keep your existing config)
-    const INITIAL_SPECIES = {
-        id: speciesCounter++,
+    // --- Configuration ---
+    // Keep INITIAL_SPECIES as a constant template
+    const INITIAL_SPECIES_TEMPLATE = {
+        id: 0, // Initial ID will always be 0
         parentId: null,
         generation: 0,
-        x: 50, // Percentage from left
-        y: 10, // Percentage from top
-        size: 30, // Size in pixels
-        color: { h: 0, s: 100, l: 50 }, // HSL color (Red)
-        shape: 'square', // Initial shape
+        x: 50, // Percentage from left (center)
+        y: 10, // Percentage from top (center)
+        size: 30,
+        color: { h: 0, s: 100, l: 50 },
+        shape: 'square',
         canSpeciate: true
     };
 
@@ -24,14 +26,46 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const LAYOUT_CONFIG = {
-        verticalSpacing: 80,
-        horizontalSpread: 100
+        verticalSpacing: 90,   // Increased spacing a bit
+        // Let's use a fixed horizontal pixel spread relative to parent
+        // We might need to adjust this based on desired tree density
+        horizontalSpreadPixels: 120
     };
 
-    let allSpecies = [INITIAL_SPECIES];
+    // --- State Variables ---
+    let allSpecies = []; // Will be initialized by reset function
+    let isPanning = false;
+    let startX, startY, scrollLeftStart, scrollTopStart;
 
-    // --- Core Functions ---
+    // --- Initialization Function ---
+    function initializeSimulation() {
+        // 1. Clear the container
+        container.innerHTML = '';
 
+        // 2. Reset state variables
+        speciesCounter = 0;
+        // Create a *fresh copy* of the initial species data
+        const firstSpecies = {
+            ...INITIAL_SPECIES_TEMPLATE,
+            id: speciesCounter++ // Assign ID 0 and increment counter
+         };
+        allSpecies = [firstSpecies];
+
+        // 3. Reset scroll/pan position
+        container.scrollLeft = 0;
+        container.scrollTop = 0;
+        // Center the initial view somewhat (optional)
+        // We need container dimensions for this, might be tricky on initial load
+        // Best to let user pan from the start or adjust later
+
+        // 4. Render the initial species
+        renderSpecies(firstSpecies);
+
+        console.log("Simulation Reset");
+    }
+
+
+    // --- Core Functions (renderSpecies, renderConnector - keep as before) ---
     function renderSpecies(speciesData) {
         const el = document.createElement('div');
         el.classList.add('species');
@@ -39,10 +73,21 @@ document.addEventListener('DOMContentLoaded', () => {
         el.dataset.id = speciesData.id;
 
         // Calculate position IN PIXELS for styling
-        const containerRect = container.getBoundingClientRect();
-        // Adjust for centering the element based on its size
-        const pixelX = (speciesData.x / 100) * containerRect.width - (speciesData.size / 2);
-        const pixelY = (speciesData.y / 100) * containerRect.height - (speciesData.size / 2);
+        // We need container's scroll dimensions for absolute positioning within the scrollable area
+        // For simplicity, let's keep using % for data, pixel for style, but be aware large trees
+        // might need > 100% values, which is fine for absolute positioning.
+        const containerRect = container.getBoundingClientRect(); // Visible part
+        const containerScrollWidth = container.scrollWidth; // Full content width
+        const containerScrollHeight = container.scrollHeight; // Full content height
+
+        // Use scroll dimensions if available and larger, otherwise fallback to clientRect
+        const effectiveWidth = Math.max(containerRect.width, containerScrollWidth);
+        const effectiveHeight = Math.max(containerRect.height, containerScrollHeight);
+
+
+        // Calculate pixel position based on the *potential* full dimensions
+        const pixelX = (speciesData.x / 100) * effectiveWidth - (speciesData.size / 2);
+        const pixelY = (speciesData.y / 100) * effectiveHeight - (speciesData.size / 2);
 
 
         el.style.left = `${pixelX}px`;
@@ -50,7 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.width = `${speciesData.size}px`;
         el.style.height = `${speciesData.size}px`;
         el.style.backgroundColor = `hsl(${speciesData.color.h}, ${speciesData.color.s}%, ${speciesData.color.l}%)`;
-        // el.textContent = speciesData.id;
 
         if (speciesData.canSpeciate) {
             el.addEventListener('click', handleSpeciationClick);
@@ -62,55 +106,45 @@ document.addEventListener('DOMContentLoaded', () => {
         return el;
     }
 
-    // *** Function to draw a line between two species data objects ***
     function renderConnector(parentData, childData) {
-        // Get container dimensions each time, in case of resize (though not handled dynamically here)
         const containerRect = container.getBoundingClientRect();
+        const containerScrollWidth = container.scrollWidth;
+        const containerScrollHeight = container.scrollHeight;
+        const effectiveWidth = Math.max(containerRect.width, containerScrollWidth);
+        const effectiveHeight = Math.max(containerRect.height, containerScrollHeight);
 
-        // Calculate CENTER points in pixels relative to the container
-        const parentCenterX = (parentData.x / 100) * containerRect.width;
-        const parentCenterY = (parentData.y / 100) * containerRect.height;
-        const childCenterX = (childData.x / 100) * containerRect.width;
-        const childCenterY = (childData.y / 100) * containerRect.height;
 
-        // Calculate differences
+        const parentCenterX = (parentData.x / 100) * effectiveWidth;
+        const parentCenterY = (parentData.y / 100) * effectiveHeight;
+        const childCenterX = (childData.x / 100) * effectiveWidth;
+        const childCenterY = (childData.y / 100) * effectiveHeight;
+
         const deltaX = childCenterX - parentCenterX;
         const deltaY = childCenterY - parentCenterY;
-
-        // Calculate length of the line (hypotenuse)
         const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-        // Calculate angle (using atan2 for correct quadrant handling)
-        // Convert radians to degrees
         const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
 
-        // Create the line element
+        if (isNaN(length) || !isFinite(length) || length <= 0 || isNaN(angle) || !isFinite(angle) || isNaN(parentCenterX) || isNaN(parentCenterY)) {
+            console.error("Invalid calculation for line geometry!", { length, angle, parentCenterX, parentCenterY });
+            return;
+        }
+
         const line = document.createElement('div');
         line.classList.add('connector');
-
-        // Position the line's start point (left edge) at the parent's center
         line.style.left = `${parentCenterX}px`;
         line.style.top = `${parentCenterY}px`;
-
-        // Set the line's width to the calculated length
         line.style.width = `${length}px`;
-
-        // Rotate the line to point towards the child's center
         line.style.transform = `rotate(${angle}deg)`;
-
-        // Add the line to the container
         container.appendChild(line);
     }
 
-
+    // --- Event Handlers ---
     function handleSpeciationClick(event) {
         const parentElement = event.target;
         const parentId = parseInt(parentElement.dataset.id);
         const parentData = allSpecies.find(s => s.id === parentId);
 
-        if (!parentData || !parentData.canSpeciate) {
-            return;
-        }
+        if (!parentData || !parentData.canSpeciate) return;
 
         parentData.canSpeciate = false;
         parentElement.removeEventListener('click', handleSpeciationClick);
@@ -118,6 +152,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         createAndRenderChild(parentData, -1); // Child 1 (left)
         createAndRenderChild(parentData, 1);  // Child 2 (right)
+
+        // Check if container needs resizing (simplistic check)
+        // A more robust solution might track max/min x/y percentages
+        checkContainerScroll();
     }
 
     function createAndRenderChild(parentData, horizontalFactor) {
@@ -129,76 +167,110 @@ document.addEventListener('DOMContentLoaded', () => {
             color: mutateColor(parentData.color),
             shape: mutateShape(parentData.shape),
             canSpeciate: true
-            // x and y will be calculated below
         };
 
-        // --- Calculate Position ---
-        const containerRect = container.getBoundingClientRect(); // Need dimensions for pixel calculations
+        // --- Calculate Position (using pixels for spacing logic) ---
+        const containerRect = container.getBoundingClientRect(); // Use visible rect for initial basis
+        const containerScrollWidth = container.scrollWidth;
+        const containerScrollHeight = container.scrollHeight;
+        const effectiveWidth = Math.max(containerRect.width, containerScrollWidth);
+        const effectiveHeight = Math.max(containerRect.height, containerScrollHeight);
 
-        // Calculate parent's center Y in pixels
-        const parentPixelCenterY = (parentData.y / 100) * containerRect.height;
-        // Calculate child's center Y in pixels
+
+        // Parent center in pixels relative to the container's potentially larger scroll area
+        const parentPixelCenterX = (parentData.x / 100) * effectiveWidth;
+        const parentPixelCenterY = (parentData.y / 100) * effectiveHeight;
+
+        // Child center Y in pixels
         const childPixelCenterY = parentPixelCenterY + LAYOUT_CONFIG.verticalSpacing;
 
-        // Calculate horizontal offset - narrows slightly in deeper generations
-        const horizontalOffsetPixels = (LAYOUT_CONFIG.horizontalSpread / Math.pow(1.5, parentData.generation)) * horizontalFactor;
-        // Calculate parent's center X in pixels
-        const parentPixelCenterX = (parentData.x / 100) * containerRect.width;
-         // Calculate child's center X in pixels
+        // Child center X offset using fixed pixel spread relative to parent's X
+        // No longer decrease spread with generation for wider trees
+        const horizontalOffsetPixels = LAYOUT_CONFIG.horizontalSpreadPixels * horizontalFactor;
         const childPixelCenterX = parentPixelCenterX + horizontalOffsetPixels;
 
-        // --- Convert child's center pixel coordinates back to percentages for storage ---
-        childData.x = (childPixelCenterX / containerRect.width) * 100;
-        childData.y = (childPixelCenterY / containerRect.height) * 100;
+        // --- Convert child's *absolute pixel* coordinates back to percentages
+        //     relative to the *potentially changed* effective container dimensions ---
+        // This ensures % stays consistent even if container grows
+        childData.x = (childPixelCenterX / effectiveWidth) * 100;
+        childData.y = (childPixelCenterY / effectiveHeight) * 100;
 
-        // --- Clamp positions to prevent going too far off-screen (simple clamping) ---
-        // Adjust clamping based on the child's size to keep it mostly visible
-        const halfSizeXPerc = (childData.size / 2 / containerRect.width) * 100;
-        const halfSizeYPerc = (childData.size / 2 / containerRect.height) * 100;
-        childData.x = Math.max(halfSizeXPerc, Math.min(100 - halfSizeXPerc, childData.x));
-        childData.y = Math.max(halfSizeYPerc, Math.min(100 - halfSizeYPerc, childData.y)); // Keep within vertical bounds too
+        // --- NO CLAMPING needed - let it expand ---
 
-        // --- Add to list, Render Shape, and Render Connector ---
         allSpecies.push(childData);
-        renderSpecies(childData); // Render the shape itself
-
-        // *** THIS IS THE CRUCIAL ADDITION ***
-        renderConnector(parentData, childData); // Draw the line connecting parent and child
-
+        renderSpecies(childData);
+        renderConnector(parentData, childData);
     }
 
+    // --- Mutation Functions (keep as before) ---
+    function mutateValue(value, shift, min, max) { /* ... */ }
+    function mutateColor(parentColor) { /* ... */ }
+    function mutateSize(parentSize) { /* ... */ }
+    function mutateShape(parentShape) { /* ... */ }
 
-    // --- Mutation Functions --- (Keep your existing mutation functions)
-    function mutateValue(value, shift, min, max) {
-        const change = (Math.random() * 2 - 1) * shift;
-        return Math.max(min, Math.min(max, value + change));
-    }
 
-    function mutateColor(parentColor) {
-        const newColor = {
-            h: (parentColor.h + mutateValue(0, MUTATION_CONFIG.hueShift, -MUTATION_CONFIG.hueShift, MUTATION_CONFIG.hueShift) + 360) % 360,
-            s: mutateValue(parentColor.s, MUTATION_CONFIG.saturationShift, 30, 100),
-            l: mutateValue(parentColor.l, MUTATION_CONFIG.lightnessShift, 30, 80)
-        };
-        return newColor;
-    }
-
-    function mutateSize(parentSize) {
-        const minSize = 10;
-        const maxSize = 100;
-        const changeFactor = 1 + (Math.random() * 2 - 1) * MUTATION_CONFIG.sizeChangeFactor;
-        return Math.max(minSize, Math.min(maxSize, parentSize * changeFactor));
-    }
-
-    function mutateShape(parentShape) {
-        if (Math.random() < MUTATION_CONFIG.shapeMutationChance) {
-            return parentShape === 'square' ? 'circle' : 'square';
+    // --- Panning Logic ---
+    function handleMouseDown(e) {
+        // Only pan with the primary mouse button, and not on species elements
+        if (e.button !== 0 || e.target.classList.contains('species')) {
+            return;
         }
-        return parentShape;
+        isPanning = true;
+        startX = e.pageX - container.offsetLeft; // Position relative to container edge
+        startY = e.pageY - container.offsetTop;
+        scrollLeftStart = container.scrollLeft;
+        scrollTopStart = container.scrollTop;
+        container.style.cursor = 'grabbing'; // Change cursor immediately
+        container.style.userSelect = 'none'; // Prevent text selection during drag
+         // Prevent default image drag or other unwanted behaviors
+        e.preventDefault();
     }
+
+    function handleMouseMove(e) {
+        if (!isPanning) return;
+        e.preventDefault(); // Prevent default during drag
+
+        const currentX = e.pageX - container.offsetLeft;
+        const currentY = e.pageY - container.offsetTop;
+
+        const walkX = currentX - startX; // How far mouse has moved
+        const walkY = currentY - startY;
+
+        container.scrollLeft = scrollLeftStart - walkX; // Scroll opposite direction
+        container.scrollTop = scrollTopStart - walkY;
+    }
+
+    function stopPanning() {
+        if (!isPanning) return; // Avoid redundant calls
+        isPanning = false;
+        container.style.cursor = 'grab'; // Restore cursor
+        container.style.removeProperty('user-select');
+    }
+
+    // --- Helper to check if container needs scrollbars ---
+    // Basic check, called after adding children
+    function checkContainerScroll() {
+       // The 'overflow: auto' CSS handles showing scrollbars automatically.
+       // However, our percentage calculations rely on effectiveWidth/Height.
+       // If new elements push scrollWidth/scrollHeight larger, subsequent %
+       // calculations will adapt. No explicit JS needed to *enable* scrollbars.
+    }
+
+
+    // --- Event Listeners Setup ---
+    resetButton.addEventListener('click', initializeSimulation);
+
+    // Panning listeners on the container
+    container.addEventListener('mousedown', handleMouseDown);
+    // Attach move and up listeners to the document or window to catch events
+    // even if the cursor leaves the container during the drag.
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', stopPanning);
+    // Stop panning if mouse leaves the container element too
+    // container.addEventListener('mouseleave', stopPanning); // Can be slightly annoying, document mouseup is usually enough
 
 
     // --- Initialisation ---
-    renderSpecies(INITIAL_SPECIES); // Render the first species when the page loads
+    initializeSimulation(); // Start the simulation on page load
 
 }); // End DOMContentLoaded
