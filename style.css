@@ -36,16 +36,6 @@ body {
     text-shadow: 1px 1px 1px black; /* Make text readable */
 }
 
-/* Basic shapes - can add more */
-.shape-square {
-    border-radius: 0%;
-}
-
-.shape-circle {
-    border-radius: 50%;
-}
-
-/* Add more shape classes here later (e.g., .shape-triangle using clip-path) */
 
 .connector {
     position: absolute;
@@ -81,16 +71,6 @@ button#reset-button {
     /* Add row-gap or margin-top on label for spacing */
     row-gap: 4px;
     z-index: 1;
-}
-
-/* The actual shape */
-.species-shape {
-    /* position: relative; /* No longer absolute positioned itself */
-    border: 1px solid black;
-    transition: background-color 0.3s, width 0.3s, height 0.3s, border-radius 0.3s, border-color 0.3s;
-    /* Keep shape styles: */
-    &.shape-square { border-radius: 0%; }
-    &.shape-circle { border-radius: 50%; }
 }
 
 /* Style for the label below the shape */
