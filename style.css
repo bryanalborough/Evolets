@@ -97,7 +97,6 @@ button#reset-button {
 .species-label {
     font-size: 10px;
     color: #333;
-    margin-top: 4px; /* Space between shape and label */
     text-align: center;
     background-color: rgba(255, 255, 255, 0.7); /* Semi-transparent background */
     padding: 1px 4px;
